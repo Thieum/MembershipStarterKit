@@ -89,7 +89,11 @@ namespace SampleWebsite.Mvc3.Areas.MvcMembership.Controllers
 			return View(new RoleViewModel
 							{
 								Role = id,
-								Users = _rolesService.FindUserNamesByRole(id).Select(username => _userService.Get(username))
+								Users = _rolesService.FindUserNamesByRole(id)
+													 .ToDictionary(
+														k => k,
+														v => _userService.Get(v)
+													 )
 							});
 		}
 
@@ -224,7 +228,11 @@ namespace SampleWebsite.Mvc3.Areas.MvcMembership.Controllers
 		[AcceptVerbs(HttpVerbs.Post)]
 		public RedirectToRouteResult DeleteUser(Guid id)
 		{
-			_userService.Delete(_userService.Get(id));
+			var user = _userService.Get(id);
+
+			if (_rolesService.Enabled)
+				_rolesService.RemoveFromAllRoles(user);
+			_userService.Delete(user);
 			return RedirectToAction("Index");
 		}
 
